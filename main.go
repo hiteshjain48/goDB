@@ -92,6 +92,13 @@ func (d *Driver) () *sync.Mutex {
 
 }
 
+func stat(path string) (os.FileInfo, error) {
+	fi, err := os.Stat(path); os.IsNotExist(err) {
+		fi, err = os.Stat(path + ".json")
+	}
+	return
+}
+
 func main() {
 	dir := "./"
 
