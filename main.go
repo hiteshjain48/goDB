@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -72,7 +73,14 @@ func New(dir string, options *Options) (*Driver, error){
 	return &driver, os.MkdirAll(dir, 0755)
 }
 
-func (d * Driver) Write() error {
+func (d * Driver) Write(collection, resource string, v interface{}) error {
+	if collection == "" {
+		return errors.New("Missing collection - no place to save record")
+	}
+	if resource == "" {
+		return errors.New("Missing record - unable to save record (no name)!")
+	}
+	mutex := d.getOrCreateMutex()
 
 }
 
@@ -88,7 +96,7 @@ func (d *Driver) Delete() error {
 
 }
 
-func (d *Driver) () *sync.Mutex {
+func (d *Driver) getOrCreateMutex() *sync.Mutex {
 
 }
 
