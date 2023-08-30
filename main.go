@@ -105,7 +105,7 @@ func (d *Driver) Read() (){
 
 }
 
-func (d *Driver) ReadAll() (){
+func (d *Driver) ReadAll(collection string) (){
 
 }
 
