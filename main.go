@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
@@ -81,6 +82,22 @@ func (d * Driver) Write(collection, resource string, v interface{}) error {
 		return errors.New("Missing record - unable to save record (no name)!")
 	}
 	mutex := d.getOrCreateMutex()
+	mutex.Lock()
+	defer mutex.Unlock()
+
+	dir := filepath.Join(d.dir, collection)
+	finalPath := filepath.Join(dir, resource+".json")
+	tempPath := finalPath + ".tmp"
+
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return err
+	}
+
+	data := json.MarshalIndent(v, "", "")
+	data = append(data, byte('\n'))
+	if err := os.WriteFile(tempPath, b, 0644); err != nil {
+		return err
+	}
 
 }
 
