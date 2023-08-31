@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"sync"
 
+	"github.com/ClickHouse/clickhouse-go/v2/resources"
 	"github.com/jcelliott/lumber"
 )
 
@@ -98,30 +99,58 @@ func (d * Driver) Write(collection, resource string, v interface{}) error {
 	if err := os.WriteFile(tempPath, b, 0644); err != nil {
 		return err
 	}
-
+	return os.Rename(tempPath, finalPath)
 }
 
-func (d *Driver) Read() (){
+func (d *Driver) Read(collection, resource string, v interface{}) error {
+	if collection == "" {
+		return errors.New("Missiong collection")
+	}
+	if resource == "" {
+		return errors.New("Missing resource")
+	}
 
+	recordPath := filepath.Join(d.dir, collection, resource)
+
+	if _, err := stat(recordPath); err != nil {
+		return err
+	}
+
+	record, err := os.ReadFile(recordPath + ".json")
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(record, &v)
 }
 
-func (d *Driver) ReadAll(collection string) (){
-
+func (d *Driver) ReadAll(collection string) ([]string, error){
+	if collection == "" {
+		return nil, errors.New("Mission collection")
+	}
+	
 }
 
 func (d *Driver) Delete() error {
 
 }
 
-func (d *Driver) getOrCreateMutex() *sync.Mutex {
+func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
+	d.mutex.Lock()
+	defer d.mutex.Unlock()
 
+	mut, ok := d.mutexes[collection]
+	if !ok {
+		mut = &sync.Mutex{}
+		d.mutexes[collection] = mut
+	}
+	return mut
 }
 
 func stat(path string) (os.FileInfo, error) {
 	fi, err := os.Stat(path); os.IsNotExist(err) {
 		fi, err = os.Stat(path + ".json")
 	}
-	return
+	return 
 }
 
 func main() {
