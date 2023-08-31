@@ -127,7 +127,19 @@ func (d *Driver) ReadAll(collection string) ([]string, error){
 	if collection == "" {
 		return nil, errors.New("Mission collection")
 	}
+	dir := filepath.Join(d.dir, collection)
+	if _, err := stat(dir); err != nil {
+		return nil, err
+	}
+	files, _ := os.ReadDir(dir)
 	
+	var records []string
+
+	for _, file := range files {
+		record, err := os.ReadFile(filepath.Join(dir, file.Name()))
+		record = append(record, string(record))
+	}
+	return records, nil
 }
 
 func (d *Driver) Delete() error {
