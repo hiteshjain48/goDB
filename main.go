@@ -4,12 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"sync"
 
-	"github.com/ClickHouse/clickhouse-go/v2/resources"
 	"github.com/jcelliott/lumber"
 )
 
@@ -77,12 +75,12 @@ func New(dir string, options *Options) (*Driver, error){
 
 func (d * Driver) Write(collection, resource string, v interface{}) error {
 	if collection == "" {
-		return errors.New("Missing collection - no place to save record")
+		return errors.New("missing collection - no place to save record")
 	}
 	if resource == "" {
-		return errors.New("Missing record - unable to save record (no name)!")
+		return errors.New("missing record - unable to save record (no name)")
 	}
-	mutex := d.getOrCreateMutex()
+	mutex := d.getOrCreateMutex(collection)
 	mutex.Lock()
 	defer mutex.Unlock()
 
@@ -94,9 +92,9 @@ func (d * Driver) Write(collection, resource string, v interface{}) error {
 		return err
 	}
 
-	data := json.MarshalIndent(v, "", "")
+	data, _ := json.MarshalIndent(v, "", "")
 	data = append(data, byte('\n'))
-	if err := os.WriteFile(tempPath, b, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
 		return err
 	}
 	return os.Rename(tempPath, finalPath)
@@ -104,10 +102,10 @@ func (d * Driver) Write(collection, resource string, v interface{}) error {
 
 func (d *Driver) Read(collection, resource string, v interface{}) error {
 	if collection == "" {
-		return errors.New("Missiong collection")
+		return errors.New("missiong collection")
 	}
 	if resource == "" {
-		return errors.New("Missing resource")
+		return errors.New("missing resource")
 	}
 
 	recordPath := filepath.Join(d.dir, collection, resource)
@@ -125,7 +123,7 @@ func (d *Driver) Read(collection, resource string, v interface{}) error {
 
 func (d *Driver) ReadAll(collection string) ([]string, error){
 	if collection == "" {
-		return nil, errors.New("Mission collection")
+		return nil, errors.New("missing collection")
 	}
 	dir := filepath.Join(d.dir, collection)
 	if _, err := stat(dir); err != nil {
@@ -137,13 +135,31 @@ func (d *Driver) ReadAll(collection string) ([]string, error){
 
 	for _, file := range files {
 		record, err := os.ReadFile(filepath.Join(dir, file.Name()))
-		record = append(record, string(record))
+		if err != nil {
+			return nil, err
+		}
+		records = append(records, string(record))
 	}
 	return records, nil
 }
 
-func (d *Driver) Delete() error {
+func (d *Driver) Delete(collection, resource string) error {
+	path := filepath.Join(collection, resource)
+	mutex := d.getOrCreateMutex(collection)
+	mutex.Lock()
+	defer mutex.Unlock()
 
+	dir := filepath.Join(d.dir, path)
+
+	switch file, err := stat(dir); {
+		case file == nil, err != nil:
+			return fmt.Errorf("unable to find file or directory named %v",path)
+		case file.Mode().IsDir():
+			return os.RemoveAll(dir)
+		case file.Mode().IsRegular():
+			return os.RemoveAll(dir + ".json")
+	}
+	return nil
 }
 
 func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
@@ -158,11 +174,12 @@ func (d *Driver) getOrCreateMutex(collection string) *sync.Mutex {
 	return mut
 }
 
-func stat(path string) (os.FileInfo, error) {
-	fi, err := os.Stat(path); os.IsNotExist(err) {
+func stat(path string) (fi os.FileInfo, err error) {
+	fi, err = os.Stat(path)
+	if os.IsNotExist(err) {
 		fi, err = os.Stat(path + ".json")
 	}
-	return 
+	return
 }
 
 func main() {
@@ -202,7 +219,7 @@ func main() {
 		}
 		allusers = append(allusers, employeeFound)
 	}
-
+	fmt.Println(allusers)
 	// if err := db.Delete("user", "Hitesh"); err != nil {
 	// 	fmt.Println("Error: ", err)
 	// }
