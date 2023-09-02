@@ -192,6 +192,9 @@ func main() {
 
 	employees := []User{
 		{"Hitesh","21","8459492271", "Oracle", Address{"Datala", "Maharashtra", "India", "443102"}},
+		{"Vaibhav","20","8459492271", "Oracle", Address{"Kolpewadi", "Maharashtra", "India", "443102"}},
+		{"Sarang","22","8459492271", "Oracle", Address{"Dhanora", "Maharashtra", "India", "443102"}},
+		{"Pratham","21","8459492271", "Oracle", Address{"Takali", "Maharashtra", "India", "443102"}},
 	}
 
 	for _, value := range employees{
@@ -220,12 +223,12 @@ func main() {
 		allusers = append(allusers, employeeFound)
 	}
 	fmt.Println(allusers)
-	// if err := db.Delete("user", "Hitesh"); err != nil {
-	// 	fmt.Println("Error: ", err)
-	// }
+	if err := db.Delete("users", "Hitesh"); err != nil {
+		fmt.Println("Error: ", err)
+	}
 
-	// if err := db.Delete("user", "");  err != nil {
-	// 	fmt.Println("Error: ", err)
-	// }
+	if err := db.Delete("users", "");  err != nil {
+		fmt.Println("Error: ", err)
+	}
 
 }
